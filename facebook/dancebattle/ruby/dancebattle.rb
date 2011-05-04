@@ -85,16 +85,16 @@ def assign_player(parent)
 end
 
 def combine_predictions(player, preds)
-  if (player == Player::OPPONENT)
+  if (player == Player::ME)
     if (preds.empty?)
       return Prediction::WIN
     end
-    return preds.max
+    return preds.min
   else
     if (preds.empty?)
       return Prediction::LOSE
     end
-    return preds.min
+    return preds.max
   end
 end
 
