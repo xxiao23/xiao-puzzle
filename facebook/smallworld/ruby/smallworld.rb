@@ -146,8 +146,8 @@ class RegionTreeNode
       new_node.long = tree_root.long
       new_node.distance = cartesian_distance(tree_root, self)
       insert_max_heap(max_heap, new_node)
-      max_heap.each {|x| print "#{x.lat},#{x.long},#{x.distance}\t"}
-      print "\n"
+      #max_heap.each {|x| print "#{x.id},#{x.lat},#{x.long},#{x.distance}\t"}
+      #print "\n"
     else
       for child in tree_root.children
         next unless child!=self
@@ -220,12 +220,23 @@ class RegionTreeNode
 
 end
 
+$results = {}
 # DFS tree
 def traverse_tree(tree_root)
   if (!tree_root.children)
     if (tree_root.point_count==1)
       max_heap = []
+      #puts "working on #{tree_root.id} ..."
       tree_root.closest_friends(max_heap, $tree_root)
+      sorted_result = [max_heap[0].id]
+      if (max_heap[1].distance < max_heap[2].distance)
+        sorted_result.unshift(max_heap[2].id)
+        sorted_result.unshift(max_heap[1].id)
+      else
+        sorted_result.unshift(max_heap[1].id)
+        sorted_result.unshift(max_heap[2].id)
+      end
+      $results[tree_root.id] = sorted_result
     end
   else
     tree_root.children.each { |x| traverse_tree(x) }
@@ -234,20 +245,22 @@ end
 
 # create the tree root
 $tree_root = RegionTreeNode.new
-$tree_root.left = -180.0
-$tree_root.right = 180.0
-$tree_root.upper = 90.0
-$tree_root.lower = -90.0
+$tree_root.left = -3600.0
+$tree_root.right = 3600.0
+$tree_root.upper = 1800.0
+$tree_root.lower = -1800.0
 $tree_root.parent = nil
 
 # process input file
 # and build a region tree from the points
+$num_people = 0
 begin
   file = File.new(ARGV[0], "r")
   while (line = file.gets)
     tmp = line.split(/\s+/)
-    puts "#{tmp[0]}, #{tmp[1]}, #{tmp[2]}"
+    #puts "#{tmp[0]}, #{tmp[1]}, #{tmp[2]}"
     $tree_root.insert(tmp[0].to_i, tmp[1].to_f, tmp[2].to_f)
+    $num_people += 1
   end
   file.close
 rescue => err
@@ -255,5 +268,9 @@ rescue => err
   err
 end
 
-$tree_root.print_levels
+#$tree_root.print_levels
 traverse_tree($tree_root)
+
+for i in 1..$num_people
+  puts "#{i} #{$results[i][0]},#{$results[i][1]},#{$results[i][2]}"
+end
