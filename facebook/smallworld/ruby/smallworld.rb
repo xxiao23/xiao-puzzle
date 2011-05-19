@@ -1,265 +1,185 @@
 #!/usr/bin/ruby
-
-# Region quad tree
-class RegionTreeNode
-  attr_accessor :left, :right, :upper, :lower
+# Point
+class Point
   attr_accessor :id, :lat, :long
-  attr_accessor :parent, :children
-  attr_accessor :point_count
 
-  def initialize
-    @point_count = 0
-    @children = nil
-    @lat = nil
-    @long = nil
-    @id = -1
-    #puts "creating RegionTreeNode point_count=#{@point_count} children=#{@children} parent=#{@parent}"
-  end
-
-  def to_string
-    return "left=#{@left} right=#{@right} upper=#{@upper} lower=#{@lower} point_count=#{@point_count} lat=#{@lat} long=#{@long}"
-  end
-
-  def print_levels
-    fifo_q = [self]
-    current_level_count = 1
-    while (!fifo_q.empty?)
-      puts "current level count = #{current_level_count}"
-      current = fifo_q.shift
-      puts current.to_string
-      if (current.children)
-        current.children.each { |x| fifo_q.push(x) }
-      end
-      current_level_count -= 1
-      if (current_level_count == 0)
-        print "\n"
-        current_level_count = fifo_q.size
-      end
-    end
-    print "\n"
-  end
-
-  # insert a node into the tree
-  # rooted at tree_root
-  def insert(i_id, i_lat, i_long)
-    # look for a leaf node
-    # whose region does not contain any point
-    current_node = self
-    prev_node = current_node.parent
-    while (current_node.children && current_node.point_count>0)
-      # pick a child with the correct region
-      current_node.point_count += 1
-      #puts "#{i_lat}, #{i_long}"
-      #print "current: "
-      #puts current_node.to_string
-      found = false
-      for child in current_node.children
-        #print "child: "
-        #puts child.to_string
-        # what about point on the boundary
-        if (child && child.left<=i_long && child.right>i_long && child.lower<=i_lat && child.upper>i_lat)
-          #print "find child "
-          #puts child.to_string
-          prev_node = current_node.parent
-          current_node = child
-          found = true
-          break
-        end
-      end
-      if (!found)
-        puts "ERROR (#{i_id}, #{i_lat}, #{i_long}) out of range"
-        exit
-      end
-    end # end of while
-
-    if (current_node.point_count == 0)
-      # empty region
-      #puts "empty region #{self}"
-      #puts current_node.to_string
-      current_node.lat = i_lat
-      current_node.long = i_long
-      current_node.id = i_id
-      current_node.point_count += 1
-    else
-      #puts "split region #{self}"
-      # need to split the node
-      current_node.children = []
-      # upper left
-      new_node1 = RegionTreeNode.new
-      new_node1.left = current_node.left
-      new_node1.right = (current_node.left+current_node.right)/2
-      new_node1.upper = current_node.upper
-      new_node1.lower = (current_node.upper+current_node.lower)/2
-      new_node1.parent = current_node
-      current_node.children.push(new_node1)
-      # lower left
-      new_node2 = RegionTreeNode.new
-      new_node2.left = current_node.left
-      new_node2.right = (current_node.left+current_node.right)/2
-      new_node2.upper = (current_node.upper+current_node.lower)/2
-      new_node2.lower = current_node.lower
-      current_node.children.push(new_node2)
-      new_node2.parent = current_node
-      # lower right
-      new_node3 = RegionTreeNode.new
-      new_node3.left = (current_node.left+current_node.right)/2
-      new_node3.right = current_node.right
-      new_node3.upper = (current_node.upper+current_node.lower)/2
-      new_node3.lower = current_node.lower
-      current_node.children.push(new_node3)
-      new_node3.parent = current_node
-      # upper right
-      new_node4 = RegionTreeNode.new
-      new_node4.left = (current_node.left+current_node.right)/2
-      new_node4.right = current_node.right
-      new_node4.upper = current_node.upper
-      new_node4.lower = (current_node.upper+current_node.lower)/2
-      current_node.children.push(new_node4)
-      new_node4.parent = current_node
-      # reassign points
-      for child in current_node.children
-        if (child && child.left<=i_long && child.right>i_long && child.lower<=i_lat && child.upper>i_lat)
-          # add to parent's point count
-          current_node.point_count += 1
-          child.insert(i_id, i_lat, i_long)
-        end
-        if (child && child.left<=current_node.long && child.right>current_node.long && child.lower<=current_node.lat && child.upper>current_node.lat)
-          child.insert(current_node.id, current_node.lat, current_node.long)
-        end
-      end
-      current_node.lat = nil
-      current_node.long = nil
-      #puts current_node.to_string
-      #current_node.children.each { |x| puts x.to_string } unless !current_node.children
-    end
-  end
-
-  # find closest friends
-  # valid only for a leaf node
-  def closest_friends(max_heap, tree_root)
-    # if this tree root is leaf
-    if (!tree_root.children)
-      return unless tree_root.point_count==1
-      new_node = MaxHeapNode.new
-      new_node.id = tree_root.id
-      new_node.lat = tree_root.lat
-      new_node.long = tree_root.long
-      new_node.distance = cartesian_distance(tree_root, self)
-      insert_max_heap(max_heap, new_node)
-      #max_heap.each {|x| print "#{x.id},#{x.lat},#{x.long},#{x.distance}\t"}
-      #print "\n"
-    else
-      for child in tree_root.children
-        next unless child!=self
-        next unless max_heap.size<3 or point_region_distance(child, self)<max_heap[0].distance
-        closest_friends(max_heap, child)
-      end
-    end
-  end
-
-  class MaxHeapNode
-    attr_accessor :id, :lat, :long, :distance
-  end
-
-  def insert_max_heap(max_heap, node)
-    if (max_heap.size<3)
-      max_heap.push(node)
-      if (max_heap[-1].distance>max_heap[0].distance)
-        tmp = max_heap[-1]
-        max_heap[-1] = max_heap[0]
-        max_heap[0] = tmp
-      end
-    else
-      if (node.distance<max_heap[0].distance)
-        max_heap[0] = node
-        max_id = -1
-        if (max_heap[1].distance<=max_heap[2].distance)
-          max_id = 2
-        else 
-          max_id = 1
-        end
-        if (max_heap[0].distance<max_heap[max_id].distance)
-          tmp = max_heap[0]
-          max_heap[0] = max_heap[max_id]
-          max_heap[max_id] = tmp
-        end
-      end
-    end
-  end
-
-  # calculate the distance between two friends
-  def cartesian_distance(friend, me)
-    return (friend.lat-me.lat)**2 + (friend.long-me.long)**2
-  end
-
-  # return the closest distance between a point
-  # and a retangular region
-  def point_region_distance(region, me)
-    distance1 = -1
-    distance2 = -1
-    if (me.long>=region.right) 
-      distance1 = (region.right-me.long)**2 + (region.upper-me.lat)**2
-      distance2 = (region.right-me.long)**2 + (region.lower-me.lat)**2
-    elsif (me.long<=region.left)
-      distance1 = (region.left-me.long)**2 + (region.upper-me.lat)**2
-      distance2 = (region.left-me.long)**2 + (region.lower-me.lat)**2
-    elsif (me.lat>=region.upper)
-      distance1 = (region.left-me.long)**2 + (region.upper-me.lat)**2
-      distance2 = (region.right-me.long)**2 + (region.upper-me.lat)**2
-    elsif (me.lat<=region.lower)
-      distance1 = (region.left-me.long)**2 + (region.lower-me.lat)**2
-      distance2 = (region.right-me.long)**2 + (region.lower-me.lat)**2
-    end
-
-    if (distance1<distance2)
-      return distance1
-    else
-      return distance2
-    end
+  def initialize(id, lat, long)
+    @id = id
+    @lat = lat
+    @long = long
   end
 
 end
 
-$results = {}
-# DFS tree
-def traverse_tree(tree_root)
-  if (!tree_root.children)
-    if (tree_root.point_count==1)
-      max_heap = []
-      #puts "working on #{tree_root.id} ..."
-      tree_root.closest_friends(max_heap, $tree_root)
-      sorted_result = [max_heap[0].id]
-      if (max_heap[1].distance < max_heap[2].distance)
-        sorted_result.unshift(max_heap[2].id)
-        sorted_result.unshift(max_heap[1].id)
-      else
-        sorted_result.unshift(max_heap[1].id)
-        sorted_result.unshift(max_heap[2].id)
-      end
-      $results[tree_root.id] = sorted_result
-    end
+# kd tree node
+class Node
+  attr_accessor :location, :left_child, :right_child
+end
+
+def kd_tree(point_list, depth=0)
+  if !point_list
+    return nil
+  end
+  #print "depth=#{depth} "
+  #point_list.each {|x| print "#{x.id} "}
+  #print "\n"
+
+  # Select axis based on depth so that axis cycles through all valid values`
+  axis = depth % 2
+  
+  # Sort point list and choose median as pivot element
+  if (axis==0)
+    sorted_list = point_list.sort_by {|a| a.lat}
   else
-    tree_root.children.each { |x| traverse_tree(x) }
+    sorted_list = point_list.sort_by {|a| a.long}
   end
+  median = sorted_list.size/2
+  #print "array="
+  #sorted_list.each {|x| print "#{x.id} "}
+  #print "median=#{median}"
+  #print "\n"
+
+  # Create node and construct subtrees
+  node = Node.new
+  node.location = sorted_list[median]
+  if (median>0)
+    node.left_child = kd_tree(sorted_list[0, median], depth+1)
+  else
+    node.left_child = nil
+  end
+  if (sorted_list.size>median+1)
+    node.right_child = kd_tree(sorted_list[median+1, sorted_list.size-median-1], depth+1)
+  else
+    node.right_child = nil
+  end
+  return node
 end
 
-# create the tree root
-$tree_root = RegionTreeNode.new
-$tree_root.left = -3600.0
-$tree_root.right = 3600.0
-$tree_root.upper = 1800.0
-$tree_root.lower = -1800.0
-$tree_root.parent = nil
+def print_kd_tree_by_level(tree_root)
+  fifo_q = [tree_root]
+  current_level_count = 1
+  while (!fifo_q.empty?)
+    current = fifo_q.shift
+    print "#{current.location.id},#{current.location.lat},#{current.location.long} "
+    # add all children to fifo queue
+    if (current.left_child)
+      fifo_q.push(current.left_child)
+    end
+    if (current.right_child)
+      fifo_q.push(current.right_child)
+    end
+    # level ends here
+    current_level_count -= 1
+    if (current_level_count == 0)
+      print "\n"
+      # calculate new level count
+      # what's currently in fifo
+      current_level_count = fifo_q.size
+      puts "current level count = #{current_level_count}"
+    end
+  end
+  print "\n"
+end
+
+def distance(friend, me)
+  return (friend.lat-me.lat)**2 + (friend.long-me.long)**2
+end
+
+# find the closest 3 friends
+def kd_search_nn(here, point, best, depth=0)
+  if (!here)
+    return best
+  end
+
+  #puts "start node #{here.location.id} depth=#{depth}"
+
+  if (here.location!=point and best.size<3)
+    #print "insert #{here.location.id} into best="
+    #best.each {|x| print "<#{x.location.id}> "}
+    #print "\n"
+    best.push(here)
+    largest = 0
+    if (best[1] and distance(best[1].location, point)>distance(best[0].location, point))
+      largest = 1
+    end
+    if (best[2] and distance(best[2].location, point)>distance(best[largest].location, point))
+      largest = 2
+    end
+    if (largest!=0)
+      tmp = best[0]
+      best[0] = best[largest]
+      best[largest] = tmp
+    end
+  # consider the current node
+  elsif (here.location!=point and distance(here.location, point)<distance(best[0].location, point))
+    #print "try to fit #{here.location.id} into best="
+    #best.each {|x| print "<#{x.location.id}> "}
+    #print "\n"
+    best[0] = here
+    largest = 0
+    if (distance(best[1].location, point)>distance(best[0].location, point))
+      largest = 1
+    end
+    if (distance(best[2].location, point)>distance(best[largest].location, point))
+      largest = 2
+    end
+    if (largest!=0)
+      tmp = best[0]
+      best[0] = best[largest]
+      best[largest] = tmp
+    end
+  end
+
+  # search the near brach
+  if (depth%2==0)
+    axis = here.location.lat
+    pivot = point.lat
+  else
+    axis = here.location.long
+    pivot = point.long
+  end
+  if pivot<=axis
+    near_child = here.left_child
+    far_child = here.right_child
+  else
+    near_child = here.right_child
+    far_child = here.left_child
+  end
+  #print "search near child "
+  best = kd_search_nn(near_child, point, best, depth+1)
+
+  # search the away brnach maybe
+  if ((axis-pivot).abs<distance(best[0].location,point))
+    #print "search far child "
+    best = kd_search_nn(far_child, point, best, depth+1)
+  end
+
+  #print "finish node #{here.location.id} depth=#{depth} best="
+  #best.each {|x| print "<#{x.location.id}> "}
+  #print "\n"
+  return best
+end
+
+def print_closest_friends(point, best)
+  print "#{point.id} "
+  if distance(point, best[1].location)<distance(point, best[2].location)
+    print "#{best[1].location.id},#{best[2].location.id},"
+  else
+    print "#{best[2].location.id},#{best[1].location.id},"
+  end
+  puts "#{best[0].location.id}"
+end
 
 # process input file
-# and build a region tree from the points
+# and build a kd tree from the points
 $num_people = 0
+$points = []
 begin
   file = File.new(ARGV[0], "r")
   while (line = file.gets)
     tmp = line.split(/\s+/)
     #puts "#{tmp[0]}, #{tmp[1]}, #{tmp[2]}"
-    $tree_root.insert(tmp[0].to_i, tmp[1].to_f, tmp[2].to_f)
+    $points.push(Point.new(tmp[0].to_i, tmp[1].to_f, tmp[2].to_f))
     $num_people += 1
   end
   file.close
@@ -268,9 +188,9 @@ rescue => err
   err
 end
 
-#$tree_root.print_levels
-traverse_tree($tree_root)
-
-for i in 1..$num_people
-  puts "#{i} #{$results[i][0]},#{$results[i][1]},#{$results[i][2]}"
+$tree_root = kd_tree($points)
+#print_kd_tree_by_level($tree_root)
+for point in $points
+  best = []
+  print_closest_friends(point, kd_search_nn($tree_root, point, best))
 end
