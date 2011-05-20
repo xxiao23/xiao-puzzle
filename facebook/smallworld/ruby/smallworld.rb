@@ -20,9 +20,11 @@ def kd_tree(point_list, depth=0)
   if !point_list
     return nil
   end
-  #print "depth=#{depth} "
-  #point_list.each {|x| print "#{x.id} "}
-  #print "\n"
+  if ($debug==1)
+    print "depth=#{depth} "
+    point_list.each {|x| print "#{x.id} "}
+    print "\n"
+  end
 
   # Select axis based on depth so that axis cycles through all valid values`
   axis = depth % 2
@@ -34,10 +36,12 @@ def kd_tree(point_list, depth=0)
     sorted_list = point_list.sort_by {|a| a.long}
   end
   median = sorted_list.size/2
-  #print "array="
-  #sorted_list.each {|x| print "#{x.id} "}
-  #print "median=#{median}"
-  #print "\n"
+  if ($debug==1)
+    print "array="
+    sorted_list.each {|x| print "#{x.id} "}
+    print "median=#{median}"
+    print "\n"
+  end
 
   # Create node and construct subtrees
   node = Node.new
@@ -91,12 +95,14 @@ def kd_search_nn(here, point, best, depth=0)
     return best
   end
 
-  #puts "start node #{here.location.id} depth=#{depth}"
+  puts "start node #{here.location.id} depth=#{depth}" unless $debug==0
 
   if (here.location!=point and best.size<3)
-    #print "insert #{here.location.id} into best="
-    #best.each {|x| print "<#{x.location.id}> "}
-    #print "\n"
+    if ($debug==1)
+      print "insert #{here.location.id} into best="
+      best.each {|x| print "<#{x.location.id}> "}
+      print "\n"
+    end
     best.push(here)
     largest = 0
     if (best[1] and distance(best[1].location, point)>distance(best[0].location, point))
@@ -112,9 +118,11 @@ def kd_search_nn(here, point, best, depth=0)
     end
   # consider the current node
   elsif (here.location!=point and distance(here.location, point)<distance(best[0].location, point))
-    #print "try to fit #{here.location.id} into best="
-    #best.each {|x| print "<#{x.location.id}> "}
-    #print "\n"
+    if ($debug==1)
+      print "try to fit #{here.location.id} into best="
+      best.each {|x| print "<#{x.location.id}> "}
+      print "\n"
+    end
     best[0] = here
     largest = 0
     if (distance(best[1].location, point)>distance(best[0].location, point))
@@ -145,18 +153,20 @@ def kd_search_nn(here, point, best, depth=0)
     near_child = here.right_child
     far_child = here.left_child
   end
-  #print "search near child "
+  print "search near child " unless $debug==0
   best = kd_search_nn(near_child, point, best, depth+1)
 
   # search the away brnach maybe
-  if ((axis-pivot).abs<distance(best[0].location,point))
-    #print "search far child "
+  if ((axis-pivot).abs**2<distance(best[0].location,point))
+    print "search far child " unless $debug==0
     best = kd_search_nn(far_child, point, best, depth+1)
   end
 
-  #print "finish node #{here.location.id} depth=#{depth} best="
-  #best.each {|x| print "<#{x.location.id}> "}
-  #print "\n"
+  if ($debug==1)
+    print "finish node #{here.location.id} depth=#{depth} best="
+    best.each {|x| print "<#{x.location.id}> "}
+    print "\n"
+  end
   return best
 end
 
@@ -170,6 +180,12 @@ def print_closest_friends(point, best)
   puts "#{best[0].location.id}"
 end
 
+if (ARGV[1])
+  $debug = 1
+else
+  $debug = 0
+end
+
 # process input file
 # and build a kd tree from the points
 $num_people = 0
@@ -178,7 +194,7 @@ begin
   file = File.new(ARGV[0], "r")
   while (line = file.gets)
     tmp = line.split(/\s+/)
-    #puts "#{tmp[0]}, #{tmp[1]}, #{tmp[2]}"
+    puts "#{tmp[0]}, #{tmp[1]}, #{tmp[2]}" unless $debug==0
     $points.push(Point.new(tmp[0].to_i, tmp[1].to_f, tmp[2].to_f))
     $num_people += 1
   end
@@ -189,7 +205,7 @@ rescue => err
 end
 
 $tree_root = kd_tree($points)
-#print_kd_tree_by_level($tree_root)
+print_kd_tree_by_level($tree_root) unless $debug==0
 for point in $points
   best = []
   print_closest_friends(point, kd_search_nn($tree_root, point, best))
