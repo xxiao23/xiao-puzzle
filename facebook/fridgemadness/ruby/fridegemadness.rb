@@ -1,6 +1,23 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
-# compute score for a -> b
+######################################
+#             class definitions      #
+######################################
+
+# flow network node
+class FlowNetworkNode 
+  attr_accessor :f, :c # f for flow value; c for edge capacity
+  
+  def initialize(f, c)
+    @f = f
+    @c = c
+  end
+end
+
+######################################
+#             sub routines           #
+######################################
+# compute score for engineer_a -> engineer_b
 def get_score(a, b)
   puts "score engineer_#{a} -> engineer_#{b}" unless $debug == 0
   hash_a = $preference_hash_array[a]
@@ -17,8 +34,16 @@ def get_score(a, b)
   return score
 end
 
+# find an augmenting path in the residue network
+# return nil if not found
+def find_augmenting_path(gf)
+  return nil
+end
+
+def update_flow_network()
+end
 ######################################
-# main #
+#       process input file           #
 ######################################
 if (ARGV[1] == "debug")
   $debug = 1
@@ -26,12 +51,25 @@ else
   $debug = 0
 end
 
+# adjacency matrix based on engineer preferences
 $adj = Array.new
-$drink_preferences = Array.new
-$preference_hash_array = Array.new
+# list of drinks in the order from input file
+$drink_preferences = Array.new 
+# Hash: drink_id => preference_score
+$preference_hash_array = Array.new 
+# adjacency matrix for flow network
+# all edges pointing from high engineers to low engineers
+# edge_capacity(i, j) = adj[i][j] + adj[j][i] 
+$flow_network = Array.new
+# adjacency matrix for residue network
+$residue_network = Array.new 
+
+# auxiliary variables
 $line_num = 0
 $line_engineers = 0
 $line_drinks = 0
+
+# process input file
 begin
   file = File.new(ARGV[0], "r")
   while line = file.gets
@@ -78,23 +116,44 @@ end
 # global variables
 $num_engineers = $line_engineers - $line_drinks
 $half_percentile_index = $num_engineers / 2 - 1
-puts "50 percentile engineer #{$half_percentile_index}" unless $debug == 0
+puts "50 percentile engineer #{$half_percentile_index}" if $debug == 1
 
 # fill in adj table O(n^2)
 # build up a forward priority queue and a reverse priority queue
 # for each lower engineer
 for i in (0..$num_engineers-1)
   $adj.push Array.new
+  $flow_network.push Array.new
+  $residue_network.push Array.new
   for j in (0..($num_engineers-1))
+    puts "i = #{i}; j = #{j}" if $debug == 1
     if (i<=$half_percentile_index and j<=$half_percentile_index) or (i>$half_percentile_index and j>$half_percentile_index)
       $adj[i].push 0
+      $flow_network[i].push FlowNetworkNode.new(0, 0)
+      $residue_network[i].push 0
     else 
-      $adj[i].push get_score(i,j)
+      my_score = get_score(i, j)
+      $adj[i].push my_score
+      if (i<=$half_percentile_index) then
+        # this is forward edge
+        $flow_network[i].push FlowNetworkNode.new(0, my_score)
+        $residue_network[i].push my_score
+        puts "flow network : #{$flow_network}" if $debug == 1
+        puts "residue network : #{$residue_network}" if $debug == 1
+      else
+        # this is backward edge
+        # so add it to the total edge capacity
+        puts "#{$flow_network[j][i]}" if $debug == 1
+        $flow_network[j][i].c += my_score
+        $flow_network[i].push FlowNetworkNode.new(0, 0)
+        $residue_network[j][i] += my_score
+        $residue_network[i].push 0
+      end
     end
   end
 end
 
-puts "adjacency matrix" unless $debug == 0
+puts "adjacency matrix" if $debug == 1
 if $debug == 1
   print "   "
   for i in (0..($num_engineers-1))
@@ -108,3 +167,44 @@ $adj.each_index { |i|
   print "\n" 
 } unless $debug == 0
 print "\n" unless $debug == 0
+
+puts "intiail flow network" if $debug == 1
+if $debug == 1
+  print "   "
+  for i in (0..($num_engineers-1))
+    print "#{i}\t"
+  end
+  print "\n"
+end
+$flow_network.each_index { |i| 
+  print "#{i}  "
+  $flow_network[i].each { |s| print "#{s.f}/#{s.c}\t" }
+  print "\n" 
+} if $debug == 1
+print "\n" if $debug == 1
+
+puts "initial residue network" if $debug == 1
+if $debug == 1
+  print "   "
+  for i in (0..($num_engineers-1))
+    print "#{i}\t"
+  end
+  print "\n"
+end
+$residue_network.each_index { |i| 
+  print "#{i}  "
+  $residue_network[i].each { |s| print "#{s}\t" }
+  print "\n" 
+} if $debug == 1
+print "\n" if $debug == 1
+
+######################################
+#             main process           #
+######################################
+
+# loop until no augmenting path in residue network
+  # find an augmenting path
+
+  # update flow network and record the paried engineers
+  
+  # update residue network
