@@ -107,8 +107,8 @@ dump_adj_map if $debug
 # if the edge is only one directional
 # remove them
 # keep only bi-birectional edges
-$adj_map.each { | key, value | 
-  value.each { | vertex |
+$adj_map.each { |key, value| 
+  value.each { |vertex|
     value.delete vertex if !$adj_map.has_key? vertex or !$adj_map[vertex].include? key
   }
 }
@@ -125,13 +125,13 @@ candidates = SortedSet.new # nodes connected with all nodes of compsub
 nots = SortedSet.new # nodes already processed which lead to a valid extensions for compsub and shouldn't be touched
 
 # initially all vertice in the graph are candidates
-$adj_map.keys.each { | v | candidates.add v }
+$adj_map.keys.each { |v| candidates.add v }
 
 # call KB algo
 bron_kerbosch compsub, candidates, nots, 0
 
 # print out maximal cliques
-$maximal_cliques.keys.sort.each { | k | 
+$maximal_cliques.keys.sort.each { |k| 
   $maximal_cliques[k].each { |v| print "#{v} " }
   print "\n"
 }
@@ -142,5 +142,27 @@ $maximal_cliques.keys.sort.each { | k |
 return if !$debug
 
 # check if each set is a clique
+$maximal_cliques.values.each { |mc| 
+  mc.each { |v|
+    tmp_mc = SortedSet.new(mc)
+    tmp_mc.delete v
+    if !tmp_mc.subset? $adj_map[v] then
+      puts "VIOLATION not clique: #{mc.inspect} due to #{v}"
+      return
+    end
+  }
+}
 
 # check if each clique is maximal
+$maximal_cliques.values.each { |mc| 
+  # check each vertex not in current maximal clique
+  $adj_map.keys.each{ |v|
+    next if mc.include? v
+    # if v has edges to all vertices in mc
+    # then mc is not maximal
+    if mc.subset? $adj_map[v] then
+      puts "VIOLATION clique not maximal: #{mc.inspect} due to #{v}"
+      return
+    end
+  }
+}
