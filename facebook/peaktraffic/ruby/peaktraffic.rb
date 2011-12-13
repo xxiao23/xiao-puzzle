@@ -22,12 +22,18 @@ def bron_kerbosch compsub, candidates, nots, level
     return
   end
   print "\n" if $debug
-  while !candidates.empty?
-    v = candidates.first
+  pivot = (candidates.union nots).first
+  puts "choosing pivot #{pivot}" if $debug
+  pivot_candidates = Set.new(candidates)
+  pivot_candidates.subtract $adj_map[pivot]
+  puts "pivot candidate set #{pivot_candidates.inspect}" if $debug
+  while !pivot_candidates.empty?
+    v = pivot_candidates.first
     new_compsub = SortedSet.new(compsub).add v
     new_candidates = SortedSet.new(candidates).intersection neighbor(v)
     new_nots = SortedSet.new(nots).intersection neighbor(v)
     bron_kerbosch new_compsub, new_candidates, new_nots, level+1
+    pivot_candidates = pivot_candidates.delete v
     candidates = candidates.delete v
     nots = nots.add v
   end
