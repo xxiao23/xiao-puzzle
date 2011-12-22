@@ -4,6 +4,21 @@ xiao-puzzle
   |
   |--------facebook
               |
-              |----------<puzzle name>
+              |----------dancebattle
+              |               |
+              |               |----------ruby
+              |----------smallworld
+              |               |
+              |               |----------ruby
+              |----------usrbincrash
+              |               |
+              |               |----------ruby
+              |----------fridgemadness
+              |               |
+              |               |----------ruby
+              |----------peaktraffic
+              |               |
+              |               |----------ruby
+              |----------   swarm
                               |
-                              |----------<language>
+                              |----------ruby
