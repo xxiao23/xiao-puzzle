@@ -19,6 +19,9 @@ xiao-puzzle
               |----------peaktraffic
               |               |
               |               |----------ruby
-              |----------   swarm
+              |-------------swarm
+              |               |
+              |               |----------ruby
+              |-------------sophie 
                               |
                               |----------ruby
