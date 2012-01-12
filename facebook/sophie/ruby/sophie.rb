@@ -124,6 +124,18 @@ end
 # the give route
 def search_from u, route, depth
   puts "depth = #{depth}\tsearching from #{u} ..." if $debug
+  # find a valid search path
+  if route.size == $num_vertice then
+    puts "NEW ROUTE : depth = #{depth}\troute found : #{route.inspect}" if $debug
+    e_time, path = get_expected_search_time_for_route route, depth
+    puts "NEW ROUTE : depth = #{depth}\tcurrent min_e_time = #{$min_e_time} min_path = #{$min_path}" if $debug
+    if e_time < $min_e_time then
+      puts "NEW ROUTE : depth = #{depth}\t#{path} is a better route with expected search time #{e_time}!" if $debug
+      $min_e_time = e_time
+      $min_path = path
+    end
+    return
+  end
   # for each vertex v reachable from current vertex u
   # in the sub-graph
   d, predecessor_tree = get_reachable_set u, route, depth
@@ -137,18 +149,7 @@ def search_from u, route, depth
     route.push v
     $simple_paths[u] = construct_path predecessor_tree, u, v
     puts "depth = #{depth}\tcurrent route = #{route.inspect}" if $debug
-    if route.size == $num_vertice then
-      puts "NEW ROUTE : depth = #{depth}\troute found : #{route.inspect}" if $debug
-      e_time, path = get_expected_search_time_for_route route, depth
-      puts "NEW ROUTE : depth = #{depth}\tcurrent min_e_time = #{$min_e_time} min_path = #{$min_path}" if $debug
-      if e_time < $min_e_time then
-        puts "NEW ROUTE : depth = #{depth}\t#{path} is a better route with expected search time #{e_time}!" if $debug
-        $min_e_time = e_time
-        $min_path = path
-      end
-    else
-      search_from v, route, depth+1 # search deeper from v
-    end
+    search_from v, route, depth+1 # search deeper from v
     route.pop # remove v from route since it's been explored
   end
   puts "depth = #{depth}\tfinished searching from #{u}" if $debug
@@ -306,7 +307,11 @@ end
 #       main process    #
 #########################
 min_expected_time
-printf "%0.02f\n", $min_e_time.to_f
+if $min_e_time < Float::MAX then
+  printf "%0.02f\n", $min_e_time.to_f
+else
+  puts "-1.00"
+end
 puts "#{$min_path.inspect}" if $debug
 
 #########################
