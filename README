@@ -3,25 +3,46 @@ Solving Programming Puzzles
 xiao-puzzle
   |
   |--------facebook
-              |
-              |----------dancebattle
-              |               |
-              |               |----------ruby
-              |----------smallworld
-              |               |
-              |               |----------ruby
-              |----------usrbincrash
-              |               |
-              |               |----------ruby
-              |----------fridgemadness
-              |               |
-              |               |----------ruby
-              |----------peaktraffic
-              |               |
-              |               |----------ruby
-              |-------------swarm
-              |               |
-              |               |----------ruby
-              |-------------sophie 
-                              |
-                              |----------ruby
+  |            |
+  |            |----------dancebattle (snack)
+  |            |               |
+  |            |               |----------ruby
+  |            |----------smallworld (snack)
+  |            |               |
+  |            |               |----------ruby
+  |            |----------usrbincrash (snack)
+  |            |               |
+  |            |               |----------ruby
+  |            |----------fridgemadness (meal)
+  |            |               |
+  |            |               |----------ruby
+  |            |----------peaktraffic (meal)
+  |            |               |
+  |            |               |----------ruby
+  |            |----------swarm (meal)
+  |            |               |
+  |            |               |----------ruby
+  |            |----------sophie (buffet)
+  |                            |
+  |                            |----------ruby
+  |
+  |--------facebook-hackercup
+			   |
+			   |----------alphabet-soup (qualification)
+               |               |
+			   |               |----------ruby
+			   |----------auction (qualification)
+			   |               |
+			   |               |----------ruby
+			   |----------billboards (qualification)
+			   |               |
+			   |               |----------ruby
+			   |----------checkpoint (round 1)
+			   |               |
+			   |               |----------ruby
+			   |-----------recover_sequence (round 1)
+			   |               |
+			   |               |----------ruby
+			   |-----------squished (round 1)
+			                   |
+			                   |----------ruby
