@@ -1,0 +1,131 @@
+Merge binary search trees in place
+Binary search tree is a fundamental data structure that is used for searching and sorting. It also common problem to merge two binary search trees into one.
+
+The simplest solution to do this is to take every element of one tree and insert it into the other tree. This may be really inefficient as it depends on how well target tree is balanced and it doesn’t take into account structure of the source tree.
+
+A more efficient way of doing this is to use insertion into root. Assuming we have two trees A and B we insert root of tree A into tree B and using rotations move inserted root to become new root of tree B. Next we recursively merge left and right sub-trees of trees A and B. This algorithm takes into account both trees structure but insertion still depends on how balanced target tree is.
+
+We can look at the problem from a different perspective. Binary search tree organizes its nodes in sorted order. Merging two trees means organizing nodes from both trees in sorted order. This sounds exactly like merge phase of merge sort. However trees cannot be directly consumed by this algorithm. So we need to convert them into sorted singly linked lists first using tree nodes. Then merge lists into a single sorted linked list. This list gives us sorted order for sought tree. This list must be converted back to tree. We got the plan, let’s go for it.
+
+In order to convert binary search tree into sorted singly linked list we traverse tree in order converting sub-trees into lists and appending them to the resulting one.
+
+// Converts tree to sorted singly linked list and appends it
+// to the head of the existing list and returns new head.
+// Left pointers are used as next pointer to form singly
+// linked list thus basically forming degenerate tree of
+// single left oriented branch. Head of the list points
+// to the node with greatest element.
+static TreeNode<T> ToSortedList<T>(TreeNode<T> tree, TreeNode<T> head)
+{
+    if (tree == null)
+        // Nothing to convert and append
+        return head;
+    // Do conversion using in order traversal
+    // Convert first left sub-tree and append it to
+    // existing list
+    head = ToSortedList(tree.Left, head);
+    // Append root to the list and use it as new head
+    tree.Left = head;
+    // Convert right sub-tree and append it to list
+    // already containing left sub-tree and root
+    return ToSortedList(tree.Right, tree);
+}
+Merging sorted linked lists is quite straightforward.
+
+// Merges two sorted singly linked lists into one and
+// calculates the size of merged list. Merged list uses
+// right pointers to form singly linked list thus forming
+// degenerate tree of single right oriented branch.
+// Head points to the node with smallest element.
+static TreeNode<T> MergeAsSortedLists<T>(TreeNode<T> left, TreeNode<T> right, IComparer<T> comparer, out int size)
+{
+    TreeNode<T> head = null;
+    size = 0;
+    // See merge phase of merge sort for linked lists
+    // with the only difference in that this implementations
+    // reverts the list during merge
+    while (left != null || right != null)
+    {
+        TreeNode<T> next;
+        if (left == null)
+            next = DetachAndAdvance(ref right);
+        else if (right == null)
+            next = DetachAndAdvance(ref left);
+        else
+            next = comparer.Compare(left.Value, right.Value) > 0
+                        ? DetachAndAdvance(ref left)
+                        : DetachAndAdvance(ref right);
+        next.Right = head;
+        head = next;
+        size++;
+    }
+    return head;
+}
+ 
+static TreeNode<T> DetachAndAdvance<T>(ref TreeNode<T> node)
+{
+    var tmp = node;
+    node = node.Left;
+    tmp.Left = null;
+    return tmp;
+}
+Rebuilding tree from sorted linked list is quite interesting. To build balanced tree we must know the number of nodes in the final tree. That is why it is calculated during merge phase. Knowing the size allows to uniformly distribute nodes and build optimal tree from height perspective. Optimality depends on usage scenarios and in this case we assume that every element in the tree has the same probability to be sought.
+
+// Converts singly linked list into binary search tree
+// advancing list head to next unused list node and
+// returning created tree root
+static TreeNode<T> ToBinarySearchTree<T>(ref TreeNode<T> head, int size)
+{
+    if (size == 0)
+        // Zero sized list converts to null
+        return null;
+ 
+    TreeNode<T> root;
+    if (size == 1)
+    {
+        // Unit sized list converts to a node with
+        // left and right pointers set to null
+        root = head;
+        // Advance head to next node in list
+        head = head.Right;
+        // Left pointers were so only right needs to
+        // be nullified
+        root.Right = null;
+        return root;
+    }
+ 
+    var leftSize = size / 2;
+    var rightSize = size - leftSize - 1;
+    // Create left substree out of half of list nodes
+    var leftRoot = ToBinarySearchTree(ref head, leftSize);
+    // List head now points to the root of the subtree
+    // being created
+    root = head;
+    // Advance list head and the rest of the list will
+    // be used to create right subtree
+    head = head.Right;
+    // Link left subtree to the root
+    root.Left = leftRoot;
+    // Create right subtree and link it to the root
+    root.Right = ToBinarySearchTree(ref head, rightSize);
+    return root;
+}
+Now putting everything together.
+
+public static TreeNode<T> Merge<T>(TreeNode<T> left, TreeNode<T> right, IComparer<T> comparer)
+{
+    Contract.Requires(comparer != null);
+ 
+    if (left == null || right == null)
+        return left ?? right;
+    // Convert both trees to sorted lists using original tree nodes
+    var leftList = ToSortedList(left, null);
+    var rightList = ToSortedList(right, null);
+    int size;
+    // Merge sorted lists and calculate merged list size
+    var list = MergeAsSortedLists(leftList, rightList, comparer, out size);
+    // Convert sorted list into optimal binary search tree
+    return ToBinarySearchTree(ref list, size);
+}
+This solution is O(n + m) time and O(1) space complexity where n and m are sizes of the trees to merge.
+
