@@ -1,14 +1,14 @@
 Case #1: 9
-Case #2: 4293
+Case #2: 32
 Case #3: 2428
-Case #4: 7
+Case #4: 6
 Case #5: 4339
 Case #6: 17930
 Case #7: 5067
-Case #8: 1304
+Case #8: 157
 Case #9: 3348
 Case #10: 191748
-Case #11: 4155
+Case #11: 1945
 Case #12: 268
 Case #13: 4256235
 Case #14: 9142
@@ -17,4 +17,4 @@ Case #16: 12070
 Case #17: 247
 Case #18: 211233
 Case #19: 5845
-Case #20: 1279
+Case #20: 75
