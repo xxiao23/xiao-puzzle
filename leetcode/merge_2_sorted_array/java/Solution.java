@@ -1,5 +1,7 @@
-
 public class Solution {
+    // there is a better solution
+    // which merge from the end of A towards its head
+    // run-time is only O(m+n)
     public void merge(int A[], int m, int B[], int n) {
         // Start typing your Java solution below
         // DO NOT write main() function
