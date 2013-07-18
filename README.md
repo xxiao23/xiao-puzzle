@@ -33,4 +33,7 @@
 <tr><td>add_binary</td><td/><td>&#10004</td>
 <tr><td>anagram</td><td/><td>&#10004</td>
 <tr><td>balanced_binary_tree</td><td/><td>&#10004</td>
+<tr><td>best_time_to_buy_sell_stock_1</td><td/><td>&#10004</td>
+<tr><td>best_time_to_buy_sell_stock_2</td><td/><td>&#10004</td>
+<tr><td>best_time_to_buy_sell_stock_3</td><td/><td>&#10004</td>
 </table>
