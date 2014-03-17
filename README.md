@@ -26,14 +26,5 @@
 ## leetcode
 <table>
 <tr><td><em>problem</em></td><td><em>ruby</em></td><td><em>java</em></td></tr>
-<tr><td>3um</td><td/><td>&#10004</td>
-<tr><td>3sum-closest</td><td/><td>&#10004</td>
-<tr><td>4sum</td><td/><td>&#10004</td>
-<tr><td>add_2_numbers</td><td/><td>&#10004</td>
-<tr><td>add_binary</td><td/><td>&#10004</td>
-<tr><td>anagram</td><td/><td>&#10004</td>
-<tr><td>balanced_binary_tree</td><td/><td>&#10004</td>
-<tr><td>best_time_to_buy_sell_stock_1</td><td/><td>&#10004</td>
-<tr><td>best_time_to_buy_sell_stock_2</td><td/><td>&#10004</td>
-<tr><td>best_time_to_buy_sell_stock_3</td><td/><td>&#10004</td>
+<tr><td>151 problems</td><td/><td>151 solved</td>
 </table>
